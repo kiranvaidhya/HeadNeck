@@ -49,10 +49,12 @@ import numpy as np
 import nrrd
 import nibabel as nib
 from sklearn.feature_extraction import image
+print 'Iteration: ', imageNumber+1
 print 'Loading Image: ', folders[imageNumber]
 img, options = nrrd.read(images[imageNumber])
 sizes = img.shape
 predictedImage = np.zeros(sizes)
+print 'Predicting...'
 j = 0
 	]=])
 
