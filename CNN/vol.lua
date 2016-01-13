@@ -3,13 +3,16 @@ require 'cudnn'
 require 'optim'
 
 py.exec([=[
-from sklearn.feature_extraction import image
+
+from sklearn.feature_extraction import image as extractor
 import nrrd
 import os
 import getopt
 import sys
 import numpy as np
 from scipy.ndimage import zoom
+
+patchSize = 13
 
 path = '../data/Training'
 sliceRoot = 'slices/training/'
@@ -32,89 +35,104 @@ for subdir, dirs, files in os.walk(path):
 			images.append(subdir + '/' + file1)
 			folders.append(subdir)
 
-slices = np.zeros((1,200,200))
-ground_truths = np.zeros((1))
-
 sizes = []
 nslices = 0
 
-for i in xrange(len(images)):
+i = 0
+]=])
 
-	# if i == 1:
-	# 	break
+for imageIterator = 1,py.eval('len(images)') do
 
-	print
-	print
-	print '####################################################################'
-	print '==> Extracting from image: ', i+1
-	print '    Folder: ', folders[i]
-	print '####################################################################'
-	print
-	print
+	py.exec([=[
 
+print
+print
+print '####################################################################'
+print '==> Extracting from image: ', i+1
+print '    Folder: ', folders[i]
+print '####################################################################'
+print
+print
+
+img, options = nrrd.read(images[i])
+try:
+	truth, options = nrrd.read(folders[i]+'/structures/Mandible.nrrd')
+except:
+	i = i+1
 	img, options = nrrd.read(images[i])
-	try:
-		truth, options = nrrd.read(folders[i]+'/structures/Mandible.nrrd')
-	except:
-		continue
-	folder = folders[i]
+folder = folders[i]
 
-	
+slices = np.zeros((1,200,200))
+ground_truths = np.zeros((1))
 
-	for j in xrange(img.shape[2]):
-		imgSlice = img[156:356,156:356,j]
-		truthSlice = truth[:,:,j]
-		imgSlice = imgSlice.reshape(1,200,200)
-		slices = np.append(slices,imgSlice,axis=0)
-		ground_truths = np.append(ground_truths,np.unique(truthSlice).shape[0])
-
-	nslices = nslices + img.shape[2]
-	sizes.append(nslices)
-	
-	print 'Mandible: ', np.sum((ground_truths==2).astype(int))
-
-	
+for j in xrange(img.shape[2]):
+	imgSlice = img[156:356,156:356,j]
+	truthSlice = truth[:,:,j]
+	imgSlice = imgSlice.reshape(1,200,200)
+	slices = np.append(slices,imgSlice,axis=0)
+	ground_truths = np.append(ground_truths,np.unique(truthSlice).shape[0])
 
 slices = slices[1:slices.shape[0]]
 ground_truths = ground_truths[1:ground_truths.shape[0]]
+
+nslices = nslices + img.shape[2]
+sizes.append(nslices)
+
+print 'Mandible: ', np.sum((ground_truths==2).astype(int))
+
+i = i + 1
+sliceIterator = 0
+
 	]=])
 
-slices = py.eval('slices')
-slices = slices:reshape(slices:size(1),1,200,200)
-truths = py.eval('ground_truths')
+	slices = py.eval('slices')
+	slices = slices:reshape(slices:size(1),1,200,200)
+	truths = py.eval('ground_truths')
 
-model = torch.load('results/model.net')
-model:evaluate()
-y = torch.zeros(slices:size(1)):cuda()
-outputs = torch.zeros(slices:size(1),2):cuda()
-for i = 1,slices:size(1) do
-	tmp1, tmp2 = model:forward(slices[i]:cuda()):max(1)
-	outputs[i] = model:forward(slices[i]:cuda())
-	y[i] = tmp2
-end
+	model = torch.load('results/model.net')
+	model:evaluate()
 
-classes = {'1','2'}
+	y = torch.zeros(slices:size(1)):cuda()
 
-confusion = optim.ConfusionMatrix(classes)
+	outputs = torch.zeros(slices:size(1),2):cuda()
+	for i = 1,slices:size(1) do
+		tmp1, tmp2 = model:forward(slices[i]:cuda()):max(1)
+		outputs[i] = model:forward(slices[i]:cuda())
+		y[i] = tmp2
+	end
 
-for i = 1,slices:size(1) do
-	confusion:add(outputs[i],truths[i])
-end
+	classes = {'1','2'}
 
-print(confusion)
+	confusion = optim.ConfusionMatrix(classes)
 
-sizes = py.eval('sizes')
+	for i = 1,slices:size(1) do
+		confusion:add(outputs[i],truths[i])
+	end
 
-j = 1
-for i = 1,table.getn(sizes) do
-	tmp = y[{{j,sizes[i]}}]
-	f = io.open('prem'..tostring(i)..'txt','w')
-	for z = 1,tmp:size(1) do
-		f:write(tmp[z]-1)
+	print(confusion)
+
+	f = io.open('prem'..tostring(imageIterator)..'txt','w')
+	for z = 1,y:size(1) do
+		f:write(y[z]-1)
 		f:write("\n")
 	end
 	f:close()
-	j = sizes[i] + 1
+
+-- 	for sliceIterator = 1,slices:size(1) do
+
+-- 		py.exec([=[
+
+-- patches = np.zeros((1,patchSize,patchSize))
+-- patch = image.extract_patches(img[:,:,sliceIterator], patchSize, extraction_step = 1)
+-- patch = patch.reshape(patch.shape[0]*patch.shape[1],patchSize,patchSize)
+-- patches = np.append(patches,patch,axis=0)
+-- patches = patches[1:patches.shape[0]]
+
+-- 		]=])
+
+
+
 end
+
 
 
