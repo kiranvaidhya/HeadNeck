@@ -1,6 +1,28 @@
 py = require('fb.python')
 require 'cudnn'
 require 'optim'
+require 'xlua'
+
+cmd = torch.CmdLine()
+cmd:text()
+cmd:text()
+cmd:text('Testing Images')
+cmd:text()
+cmd:text('Options')
+cmd:option('-batchSize',128)
+cmd:option('-patchSize',21)
+cmd:text()
+
+params = cmd:parse(arg)
+batchSize = params.batchSize
+patchSize = params.patchSize
+
+
+model = torch.load('D45_P13Best/model.net')
+sliceModel = torch.load('results/model.net')
+
+model:evaluate()
+sliceModel:evaluate()
 
 py.exec([=[
 
@@ -78,6 +100,8 @@ ground_truths = ground_truths[1:ground_truths.shape[0]]
 nslices = nslices + img.shape[2]
 sizes.append(nslices)
 
+predictedImage = np.zeros(img.shape)
+
 print 'Mandible: ', np.sum((ground_truths==2).astype(int))
 
 i = i + 1
@@ -89,15 +113,13 @@ sliceIterator = 0
 	slices = slices:reshape(slices:size(1),1,200,200)
 	truths = py.eval('ground_truths')
 
-	model = torch.load('results/model.net')
-	model:evaluate()
 
 	y = torch.zeros(slices:size(1)):cuda()
 
 	outputs = torch.zeros(slices:size(1),2):cuda()
 	for i = 1,slices:size(1) do
-		tmp1, tmp2 = model:forward(slices[i]:cuda()):max(1)
-		outputs[i] = model:forward(slices[i]:cuda())
+		tmp1, tmp2 = sliceModel:forward(slices[i]:cuda()):max(1)
+		outputs[i] = sliceModel:forward(slices[i]:cuda())
 		y[i] = tmp2
 	end
 
@@ -111,27 +133,61 @@ sliceIterator = 0
 
 	print(confusion)
 
-	f = io.open('prem'..tostring(imageIterator)..'txt','w')
-	for z = 1,y:size(1) do
-		f:write(y[z]-1)
-		f:write("\n")
+	-- f = io.open('prem'..tostring(imageIterator)..'txt','w')
+	-- for z = 1,y:size(1) do
+	-- 	f:write(y[z]-1)
+	-- 	f:write("\n")
+	-- end
+	-- f:close()
+
+
+	for sliceIterator = 1,slices:size(1) do
+
+		if y[sliceIterator] == 1 then
+
+			predictions = torch.zeros((512-patchSize+1)*(512-patchSize+1))
+			py.exec([=[
+sliceIterator = sliceIterator + 1
+				]=])
+
+		else
+			py.exec([=[
+patches = np.zeros((1,patchSize,patchSize))
+patch = extractor.extract_patches(img[:,:,sliceIterator], patchSize, extraction_step = 1)
+patch = patch.reshape(patch.shape[0]*patch.shape[1],patchSize,patchSize)
+patches = np.append(patches,patch,axis=0)
+patches = patches[1:patches.shape[0]]
+sliceIterator = sliceIterator + 1
+			]=])
+
+			local patches = py.eval('patches')
+			patches = patches:reshape(patches:size(1),1,patchSize,patchSize)
+
+			predictions = torch.Tensor(patches:size(1)):float()
+
+			for i = 1, patches:size(1),batchSize do
+				local batch = patches[{{i,math.min(i+batchSize-1,patches:size(1))}}]:cuda()
+				posteriorProbabilities, predictedClasses = model:forward(batch):max(2)
+				predictions[{{i,math.min(i+batchSize-1,patches:size(1))}}] = predictedClasses:float()
+			end
+		end
+
+		py.exec([=[
+predictedSlice = pred
+predictedSlice = predictedSlice.reshape(512-patchSize+1,512-patchSize+1)
+predictedSlice = np.lib.pad(predictedSlice,((patchSize-1)/2,(patchSize-1)/2),'constant',constant_values=0)
+predictedImage[:,:,sliceIterator-1] = predictedSlice
+if sliceIterator == img.shape[2]:
+	predictedImage[np.where(predictedImage==1)] = 0
+	predictedImage[np.where(predictedImage==2)] = 1
+	print 'Saving Image: ',folders[i-1]
+	nrrd.write(folders[i-1]+'/prediction.nrrd',predictedImage,options)
+	]=],{pred = predictions})
+
+	xlua.progress(sliceIterator,py.eval('img.shape[2]'))
+
 	end
-	f:close()
-
--- 	for sliceIterator = 1,slices:size(1) do
-
--- 		py.exec([=[
-
--- patches = np.zeros((1,patchSize,patchSize))
--- patch = image.extract_patches(img[:,:,sliceIterator], patchSize, extraction_step = 1)
--- patch = patch.reshape(patch.shape[0]*patch.shape[1],patchSize,patchSize)
--- patches = np.append(patches,patch,axis=0)
--- patches = patches[1:patches.shape[0]]
-
--- 		]=])
-
-
-
+	
 end
 
 
