@@ -12,10 +12,21 @@ if not opt then
    opt = cmd:parse(arg or {})
 end
 
+if opt.mode == 'patch' then
+
 trainData = torch.load('../HeadNeck/codes/s_trainData.t7')
 trainLabels = torch.load('../HeadNeck/codes/s_trainLabels.t7')
 testData = torch.load('../HeadNeck/codes/s_validData.t7')
 testLabels = torch.load('../HeadNeck/codes/s_validLabels.t7')
+
+else
+
+trainData = torch.load('../HeadNeck/codes/slices/slices_training.t7')
+trainLabels = torch.load('../HeadNeck/codes/slices/truths_training.t7')
+testData = torch.load('../HeadNeck/codes/slices/slices_validation.t7')
+testLabels = torch.load('../HeadNeck/codes/slices/truths_validation.t7')
+
+end
 
 trsize = trainData:size(1)
 tesize = testData:size(1)
@@ -34,11 +45,6 @@ testData = {
 
 if opt.size == 'small' then
 	print '==> Using a subset(20%) of the entire dataset for faster experiments'
-
-	-- print('==> TestData - ', math.floor(testData.data:size(1)/5))
-	-- testData.data = trainData.data[{{100000,110000}}]
-	-- testData.labels = trainData.labels[{{100000,110000}}]
-	-- testData.size = function() return testData.data:size(1) end
 
 	
 	trainData.data = trainData.data[{{1,math.floor(trainData.data:size(1)/5)}}]

@@ -32,7 +32,7 @@ height = 13
 ninputs = nfeats*width*height
 
 -- hidden units, filter sizes (for ConvNet only):
-nstates = {64,64,64,1000,100}
+nstates = {64,64,64,1000,500,100}
 filtsize = 3
 poolsize = 2
 normkernel = image.gaussian1D(7)
@@ -59,7 +59,10 @@ if opt.model == 'convnet' then
       model:add(nn.Dropout(0.5))
       model:add(nn.Linear(nstates[4],nstates[5]))
       model:add(cudnn.ReLU())
-      model:add(nn.Linear(nstates[5],noutputs))
+      model:add(nn.Dropout(0.5))
+      model:add(nn.Linear(nstates[5],nstates[6]))
+      model:add(cudnn.ReLU())
+      model:add(nn.Linear(nstates[6],noutputs))
 
       model = model:cuda()
 

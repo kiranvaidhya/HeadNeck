@@ -1,2 +1,0 @@
-Run "th doall.lua -type cuda -batchSize 100 -loss margin"
-Make sure the .t7 files are inside HeadNeck/codes before running the training

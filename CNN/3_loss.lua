@@ -1,13 +1,3 @@
-----------------------------------------------------------------------
--- This script demonstrates how to define a couple of different
--- loss functions:
---   + negative-log likelihood, using log-normalized output units (SoftMax)
---   + mean-square error
---   + margin loss (SVM-like)
---
--- Clement Farabet
-----------------------------------------------------------------------
-
 require 'torch'   -- torch
 require 'nn'      -- provides all sorts of loss functions
 
@@ -48,7 +38,7 @@ elseif opt.loss == 'nll' then
    -- be properly normalized log-probabilities, which can be
    -- achieved using a softmax function
 
-   model:add(nn.LogSoftMax())
+   model:add(cudnn.LogSoftMax())
 
    -- The loss works like the MultiMarginCriterion: it takes
    -- a vector of classes, and the index of the grountruth class

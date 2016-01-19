@@ -33,6 +33,8 @@ function test()
    print('==> testing on test set:')
    for t = 1,testData:size(),opt.batchSize do
 
+      xlua.progress(t, testData:size())
+
       local testInputs = testData.data[{{t,math.min(t+opt.batchSize-1,testData:size())}}]:cuda()
       local testTargets = testData.labels[{{t,math.min(t+opt.batchSize-1,testData:size())}}]:cuda()
 
@@ -64,7 +66,7 @@ function test()
       -- restore parameters
       parameters:copy(cachedparams)
    end
-   
+  
    -- next iteration:
    confusion:zero()
 end
