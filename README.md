@@ -1,3 +1,5 @@
+Data download from here -> http://www.imagenglab.com/wiki/mediawiki/index.php?title=2015_MICCAI_Challenge
+
 Patch and Slice extraction codes inside HeadNeck/codes
 
 CNN Training codes inside CNN
