@@ -6,4 +6,6 @@ CNN Training codes inside CNN
 
 Follow the READMEs inside
 
+Data split has been listed in dataList.ods
+
 The best network was tested on Validation+Testing Dataset and the dice similarity score was 0.52
