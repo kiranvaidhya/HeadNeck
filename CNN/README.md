@@ -1,17 +1,17 @@
-==> For training patch based model, execute the following line
+# Training a CNN for Mandible Segmentation
 
-th doall.lua -type cuda -batchSize 96 -coefL2 0.0005 -momentum 0.8
+## Patch based mandible/background classifier
 
-==> For training slice based model which trains a CNN to predict whether a given slice has mandible or not, execute the following
+`th doall.lua -type cuda -batchSize 96 -coefL2 0.0005 -momentum 0.8`
 
-th doall.lua -type cuda -batchSize 44 -coefL2 0.0005 -optimization adagrad -mode slice
+## Training slice based model which trains a CNN to predict whether a given slice has mandible or not
 
-==> Prediction
+`th doall.lua -type cuda -batchSize 44 -coefL2 0.0005 -optimization adagrad -mode slice`
 
-==> For predicting the volumes, execute
+## Prediction
 
-sh predictVolumes.sh n
+`sh predictVolumes.sh n`
 
-==> where n = 1 for testing, n = 2 for validation and n = 3 for training datasets
+where n = 1 for testing, n = 2 for validation and n = 3 for training datasets
 
 
