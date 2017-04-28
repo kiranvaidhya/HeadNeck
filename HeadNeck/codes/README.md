@@ -1,11 +1,11 @@
-==> PreProcessing
+# PreProcessing
 
-python PreProcessing/preProcess.py
+`python PreProcessing/preProcess.py`
 
-==> Execute the following for extracting patches
+## Patch extraction
 
-sh extractPatches.sh
+`sh extractPatches.sh`
 
-==> Execute the following for extracting slices
+## Slice extraction
 
-sh extractSlices.sh
+`sh extractSlices.sh`
